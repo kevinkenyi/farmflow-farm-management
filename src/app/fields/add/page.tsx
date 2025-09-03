@@ -9,8 +9,11 @@ import {
   MapPin,
   Sun,
   Droplets,
-  Wrench
+  Wrench,
+  Loader2
 } from "lucide-react";
+import { apiService } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function AddFieldPage() {
   const [newField, setNewField] = useState({
@@ -22,34 +25,41 @@ export default function AddFieldPage() {
     status: 'active',
     notes: ''
   });
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
     try {
-      // Simulate API call - in real app, this would be a POST request
-      console.log('Adding new field:', newField);
+      const response = await apiService.createField(newField);
       
-      // Show success message
-      alert('Field added successfully!');
+      if (response.data.success) {
+        toast.success('Field added successfully!');
+        
+        // Reset form
+        setNewField({
+          name: '',
+          area: '',
+          location: '',
+          soilType: 'loamy',
+          irrigationType: 'drip',
+          status: 'active',
+          notes: ''
+        });
+        
+        // Redirect back to fields page
+        window.location.href = '/fields';
+      } else {
+        toast.error('Failed to add field');
+      }
       
-      // Reset form
-      setNewField({
-        name: '',
-        area: '',
-        location: '',
-        soilType: 'loamy',
-        irrigationType: 'drip',
-        status: 'active',
-        notes: ''
-      });
-      
-      // Redirect back to fields page
-      window.location.href = '/fields';
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding field:', error);
-      alert('Error adding field. Please try again.');
+      const errorMessage = error.response?.data?.error || 'Error adding field. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -204,10 +214,20 @@ export default function AddFieldPage() {
                 </Link>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-harvest-500 text-white rounded-lg hover:bg-harvest-600 transition-colors flex items-center justify-center space-x-2"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-harvest-500 text-white rounded-lg hover:bg-harvest-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                 >
-                  <Save className="h-4 w-4" />
-                  <span>Add Field</span>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span>Add Field</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import BottomNavigation from "@/components/BottomNavigation";
 import { 
   CheckCircle2, 
   TrendingUp, 
@@ -271,38 +272,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-earth-200 dark:border-gray-700">
-        <div className="flex justify-around items-center py-2">
-          <Link
-            href="/fields"
-            className="flex flex-col items-center py-2 px-4 rounded-lg transition-colors text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-          >
-            <MapPin className="h-6 w-6 mb-1" />
-            <span className="text-xs font-medium">Fields</span>
-          </Link>
-          <Link
-            href="/crops"
-            className="flex flex-col items-center py-2 px-4 rounded-lg transition-colors text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-          >
-            <Calendar className="h-6 w-6 mb-1" />
-            <span className="text-xs font-medium">Crops</span>
-          </Link>
-          <Link
-            href="/inventory"
-            className="flex flex-col items-center py-2 px-4 rounded-lg transition-colors text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-          >
-            <Droplets className="h-6 w-6 mb-1" />
-            <span className="text-xs font-medium">Inventory</span>
-          </Link>
-          <Link
-            href="/reports"
-            className="flex flex-col items-center py-2 px-4 rounded-lg transition-colors text-earth-500 bg-earth-100 dark:bg-earth-900"
-          >
-            <BarChart className="h-6 w-6 mb-1" />
-            <span className="text-xs font-medium">Reports</span>
-          </Link>
-        </div>
-      </nav>
+      <BottomNavigation />
 
       {/* Bottom padding to account for fixed navigation */}
       <div className="h-20"></div>

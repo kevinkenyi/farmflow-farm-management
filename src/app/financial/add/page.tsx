@@ -236,3 +236,4 @@ export default function AddFinancialPage() {
     </div>
   );
 }
+

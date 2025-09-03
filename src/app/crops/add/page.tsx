@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { 
   ArrowLeft, 
-  Save
+  Save,
+  Loader2
 } from "lucide-react";
+import { apiService } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function AddCropPage() {
   const [newCrop, setNewCrop] = useState({
@@ -18,16 +21,48 @@ export default function AddCropPage() {
     notes: '',
     status: 'planted'
   });
+  const [fields, setFields] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fieldsLoading, setFieldsLoading] = useState(true);
+
+  // Load fields for the dropdown
+  useEffect(() => {
+    const loadFields = async () => {
+      try {
+        const response = await apiService.getFields();
+        setFields(response.data.data || []);
+      } catch (error) {
+        console.error('Error loading fields:', error);
+        toast.error('Failed to load fields');
+      } finally {
+        setFieldsLoading(false);
+      }
+    };
+    
+    loadFields();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
     try {
-      // Simulate API call - in real app, this would be a POST request
-      console.log('Adding new crop:', newCrop);
+      // Find the selected field ID
+      const selectedField = fields.find(f => f.name === newCrop.field);
+      if (!selectedField) {
+        toast.error('Please select a valid field');
+        return;
+      }
+
+      const cropData = {
+        ...newCrop,
+        field: selectedField._id, // Use the field's ObjectId
+      };
+
+      const response = await apiService.createCrop(cropData);
       
-      // Show success message
-      alert('Crop added successfully!');
+      if (response.data.success) {
+        toast.success('Crop added successfully!');
       
       // Reset form
       setNewCrop({
@@ -42,10 +77,16 @@ export default function AddCropPage() {
       
       // Redirect back to crops page
       window.location.href = '/crops';
+      } else {
+        toast.error('Failed to add crop');
+      }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding crop:', error);
-      alert('Error adding crop. Please try again.');
+      const errorMessage = error.response?.data?.error || 'Error adding crop. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -116,12 +157,16 @@ export default function AddCropPage() {
                     value={newCrop.field}
                     onChange={(e) => setNewCrop({...newCrop, field: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-earth-500"
+                    disabled={fieldsLoading}
                   >
-                    <option value="">Select a field</option>
-                    <option value="Field A">Field A</option>
-                    <option value="Field B">Field B</option>
-                    <option value="Field C">Field C</option>
-                    <option value="Field D">Field D</option>
+                    <option value="">
+                      {fieldsLoading ? 'Loading fields...' : 'Select a field'}
+                    </option>
+                    {fields.map((field) => (
+                      <option key={field._id} value={field.name}>
+                        {field.name} ({field.area} acres)
+                      </option>
+                    ))}
                   </select>
               </div>
                 
@@ -190,10 +235,20 @@ export default function AddCropPage() {
                 </Link>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-harvest-500 text-white rounded-lg hover:bg-harvest-600 transition-colors flex items-center justify-center space-x-2"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-harvest-500 text-white rounded-lg hover:bg-harvest-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                 >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
                   <Save className="h-4 w-4" />
                   <span>Add Crop</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

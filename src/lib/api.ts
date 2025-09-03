@@ -1,9 +1,13 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// In Next.js full-stack mode, we use relative paths
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? process.env.NEXT_PUBLIC_API_URL || ''
+  : '';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -40,13 +44,14 @@ api.interceptors.response.use(
 
 // API endpoints
 export const endpoints = {
-  health: '/health',
+  health: '/api/health',
   auth: {
     login: '/api/auth/login',
     register: '/api/auth/register',
     logout: '/api/auth/logout',
   },
   users: '/api/users',
+  workers: '/api/workers',
   crops: '/api/crops',
   fields: '/api/fields',
   inventory: '/api/inventory',
@@ -54,6 +59,7 @@ export const endpoints = {
   customers: '/api/customers',
   invoices: '/api/invoices',
   activities: '/api/activities',
+  sms: '/api/sms',
 };
 
 // API functions
@@ -74,6 +80,13 @@ export const apiService = {
   createUser: (userData: any) => api.post(endpoints.users, userData),
   updateUser: (id: string, userData: any) => api.put(`${endpoints.users}/${id}`, userData),
   deleteUser: (id: string) => api.delete(`${endpoints.users}/${id}`),
+  
+  // Workers
+  getWorkers: () => api.get(endpoints.workers),
+  getWorker: (id: string) => api.get(`${endpoints.workers}/${id}`),
+  createWorker: (workerData: any) => api.post(endpoints.workers, workerData),
+  updateWorker: (id: string, workerData: any) => api.put(`${endpoints.workers}/${id}`, workerData),
+  deleteWorker: (id: string) => api.delete(`${endpoints.workers}/${id}`),
   
   // Crops
   getCrops: () => api.get(endpoints.crops),
@@ -123,4 +136,13 @@ export const apiService = {
   createActivity: (activityData: any) => api.post(endpoints.activities, activityData),
   updateActivity: (id: string, activityData: any) => api.put(`${endpoints.activities}/${id}`, activityData),
   deleteActivity: (id: string) => api.delete(`${endpoints.activities}/${id}`),
+  
+  // SMS
+  getSMSConfig: () => api.get(`${endpoints.sms}/config`),
+  saveSMSConfig: (configData: any) => api.post(`${endpoints.sms}/config`, configData),
+  sendSMS: (smsData: { to: string; message: string; type?: string }) => api.post(`${endpoints.sms}/send`, smsData),
+  sendBulkSMS: (smsData: { recipients: string[]; message: string; type?: string }) => api.post(`${endpoints.sms}/send-bulk`, smsData),
+  notifyWorker: (workerData: { workerId: string; taskTitle: string; taskDetails?: string; workerPhone?: string }) => api.post(`${endpoints.sms}/notify-worker`, workerData),
+  sendPaymentReminder: (reminderData: { customerId: string; amount: number; dueDate: string; invoiceNumber?: string; customerPhone?: string }) => api.post(`${endpoints.sms}/payment-reminder`, reminderData),
+  getSMSLogs: (params?: { limit?: number; skip?: number; type?: string }) => api.get(`${endpoints.sms}/logs`, { params }),
 };

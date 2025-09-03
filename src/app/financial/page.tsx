@@ -1,325 +1,342 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import BottomNavigation from "@/components/BottomNavigation";
+import PageHeader from "@/components/PageHeader";
+import CheckUpload from "@/components/CheckUpload";
+import UnifiedTimeline from "@/components/UnifiedTimeline";
 import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
-  Plus, 
   Search, 
-  Filter,
+  Plus, 
+  Filter, 
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  FileImage,
+  CheckCircle,
   Calendar,
-  Receipt,
-  ShoppingCart,
-  Wrench,
+  Package,
   Users,
-  ArrowUpRight,
-  ArrowDownRight,
-  MoreHorizontal
-} from 'lucide-react';
+  BarChart3
+} from "lucide-react";
+
+interface CheckData {
+  amount: number;
+  date: string;
+  payee: string;
+  bank: string;
+  checkNumber: string;
+  memo?: string;
+}
+
+interface TimelineEvent {
+  id: number;
+  type: 'planting' | 'fertilizing' | 'watering' | 'pest_control' | 'harvesting' | 'sale' | 'payment';
+  date: string;
+  title: string;
+  description: string;
+  cost?: number;
+  revenue?: number;
+  worker?: string;
+  client?: string;
+  quantity?: number;
+  unit?: string;
+  pricePerUnit?: number;
+  checkImage?: string;
+  checkNumber?: string;
+  bank?: string;
+  notes?: string;
+}
 
 export default function FinancialPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-
-  // Mock data - replace with real API calls
-  const stats = {
-    totalIncome: 12500,
-    totalExpenses: 8200,
-    profit: 4300,
-    profitMargin: 34.4
-  };
-
-  const recentTransactions = [
+  const [activeTab, setActiveTab] = useState<'overview' | 'checks' | 'timeline'>('overview');
+  
+  // Mock data - in real app, this would come from API
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([
     {
       id: 1,
-      type: 'income',
-      category: 'sales',
-      description: 'Tomato Harvest Sale',
-      amount: 1250,
+      type: 'planting',
       date: '2024-01-15',
-      status: 'completed'
+      title: 'Tomato Planting',
+      description: 'Planted 100 tomato seedlings in Field A',
+      cost: 500,
+      worker: 'John Doe',
+      quantity: 100,
+      unit: 'plants'
     },
     {
       id: 2,
-      type: 'expense',
-      category: 'equipment',
-      description: 'Tractor Maintenance',
-      amount: 450,
-      date: '2024-01-14',
-      status: 'completed'
+      type: 'fertilizing',
+      date: '2024-01-20',
+      title: 'Fertilizer Application',
+      description: 'Applied organic fertilizer to tomato plants',
+      cost: 300,
+      worker: 'Jane Smith',
+      quantity: 2,
+      unit: 'kg'
     },
     {
       id: 3,
-      type: 'income',
-      category: 'sales',
-      description: 'Lettuce Batch Sale',
-      amount: 800,
-      date: '2024-01-13',
-      status: 'completed'
+      type: 'harvesting',
+      date: '2024-03-15',
+      title: 'First Harvest',
+      description: 'Harvested 50kg of tomatoes',
+      cost: 200,
+      worker: 'John Doe',
+      quantity: 50,
+      unit: 'kg'
     },
     {
       id: 4,
-      type: 'expense',
-      category: 'labor',
-      description: 'Seasonal Workers',
-      amount: 1200,
-      date: '2024-01-12',
-      status: 'completed'
+      type: 'sale',
+      date: '2024-03-16',
+      title: 'Sale to Green Valley School',
+      description: 'Sold 30kg tomatoes to Green Valley Primary School',
+      revenue: 4500,
+      client: 'Green Valley Primary School',
+      quantity: 30,
+      unit: 'kg',
+      pricePerUnit: 150
+    },
+    {
+      id: 5,
+      type: 'payment',
+      date: '2024-03-20',
+      title: 'Payment Received',
+      description: 'Received payment for tomato sale',
+      revenue: 4500,
+      client: 'Green Valley Primary School',
+      checkNumber: 'CHK-2024-001234',
+      bank: 'Equity Bank',
+      notes: 'Check deposited and cleared'
     }
-  ];
+  ]);
 
-  const categories = [
-    { id: 'sales', name: 'Sales', icon: Receipt, color: 'text-green-600', bgColor: 'bg-green-50' },
-    { id: 'purchases', name: 'Purchases', icon: ShoppingCart, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { id: 'labor', name: 'Labor', icon: Users, color: 'text-orange-600', bgColor: 'bg-orange-50' },
-    { id: 'equipment', name: 'Equipment', icon: Wrench, color: 'text-purple-600', bgColor: 'bg-purple-50' }
-  ];
+  const [checks, setChecks] = useState<CheckData[]>([
+    {
+      amount: 4500,
+      date: '2024-03-20',
+      payee: 'Green Valley Primary School',
+      bank: 'Equity Bank',
+      checkNumber: 'CHK-2024-001234',
+      memo: 'Payment for fresh vegetables - December order'
+    },
+    {
+      amount: 3200,
+      date: '2024-03-25',
+      payee: 'Sunshine Secondary School',
+      bank: 'KCB Bank',
+      checkNumber: 'CHK-2024-001567',
+      memo: 'Payment for lettuce and carrots'
+    }
+  ]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES'
-    }).format(amount);
+  const handleCheckProcessed = (checkData: CheckData) => {
+    // Add to checks list
+    setChecks([...checks, checkData]);
+    
+    // Add payment event to timeline
+    const newEvent: TimelineEvent = {
+      id: Date.now(),
+      type: 'payment',
+      date: checkData.date,
+      title: 'Payment Received',
+      description: `Received payment from ${checkData.payee}`,
+      revenue: checkData.amount,
+      client: checkData.payee,
+      checkNumber: checkData.checkNumber,
+      bank: checkData.bank,
+      notes: checkData.memo
+    };
+    
+    setTimelineEvents([...timelineEvents, newEvent]);
+    
+    alert('Payment recorded successfully!');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
+  const calculateTotalRevenue = () => {
+    return timelineEvents
+      .filter(event => event.revenue)
+      .reduce((sum, event) => sum + (event.revenue || 0), 0);
+  };
+
+  const calculateTotalCosts = () => {
+    return timelineEvents
+      .filter(event => event.cost)
+      .reduce((sum, event) => sum + (event.cost || 0), 0);
+  };
+
+  const calculateProfit = () => {
+    return calculateTotalRevenue() - calculateTotalCosts();
+  };
+
+  const getPendingPayments = () => {
+    const sales = timelineEvents.filter(event => event.type === 'sale');
+    const payments = timelineEvents.filter(event => event.type === 'payment');
+    
+    const totalSales = sales.reduce((sum, event) => sum + (event.revenue || 0), 0);
+    const totalPayments = payments.reduce((sum, event) => sum + (event.revenue || 0), 0);
+    
+    return totalSales - totalPayments;
   };
 
   return (
-    <div className="min-h-screen bg-earth-50 dark:bg-gray-900 p-4">
+    <div className="min-h-screen bg-earth-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-earth-900 dark:text-white">Financial Management</h1>
-            <p className="text-earth-600 dark:text-earth-300">Track income, expenses, and profitability</p>
+      <PageHeader 
+        title="Financial Management" 
+        subtitle="Track income, expenses, and payments"
+      />
+
+      {/* Tab Navigation */}
+      <div className="bg-white dark:bg-gray-800 border-b border-earth-200 dark:border-gray-700">
+        <div className="px-4 py-4">
+          <div className="flex justify-between items-center mb-4">
+            <div></div>
+            <Link href="/sales/add" className="flex items-center space-x-2 bg-harvest-500 text-white px-4 py-2 rounded-lg hover:bg-harvest-600 transition-colors">
+              <Plus className="h-4 w-4" />
+              <span className="text-sm font-medium">Record Sale</span>
+            </Link>
           </div>
-          <Link 
-            href="/financial/add"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-earth-600 hover:bg-earth-700 text-white rounded-xl shadow-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Transaction
-          </Link>
-        </div>
-
-        {/* Period Selector */}
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="w-4 h-4 text-earth-600" />
-          <select 
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-3 py-1 border border-earth-200 rounded-lg bg-white dark:bg-gray-800 text-earth-900 dark:text-white"
-          >
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-earth-600 dark:text-earth-400">Total Income</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalIncome)}</div>
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-earth-600 dark:text-earth-400">Total Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalExpenses)}</div>
-              <TrendingDown className="w-5 h-5 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-earth-600 dark:text-earth-400">Net Profit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-earth-600">{formatCurrency(stats.profit)}</div>
-              <DollarSign className="w-5 h-5 text-earth-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-earth-600 dark:text-earth-400">Profit Margin</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-earth-600">{stats.profitMargin}%</div>
-              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                <ArrowUpRight className="w-4 h-4 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Category Filter */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-4 h-4 text-earth-600" />
-          <span className="text-sm font-medium text-earth-700 dark:text-earth-300">Filter by Category</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-              selectedCategory === 'all'
-                ? 'bg-earth-600 text-white'
-                : 'bg-white dark:bg-gray-800 text-earth-600 border border-earth-200 dark:border-gray-700'
-            }`}
-          >
-            All Categories
-          </button>
-          {categories.map((category) => (
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === category.id
-                  ? 'bg-earth-600 text-white'
-                  : 'bg-white dark:bg-gray-800 text-earth-600 border border-earth-200 dark:border-gray-700'
+              onClick={() => setActiveTab('overview')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'overview'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              {category.name}
+              <BarChart3 className="h-4 w-4" />
+              <span>Overview</span>
             </button>
-          ))}
+            <button
+              onClick={() => setActiveTab('checks')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'checks'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <FileImage className="h-4 w-4" />
+              <span>Check Upload</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'timeline'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Timeline</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Recent Transactions */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-earth-900 dark:text-white">Recent Transactions</h2>
-          <Link 
-            href="/financial/transactions"
-            className="text-sm text-earth-600 hover:text-earth-700 dark:text-earth-400 dark:hover:text-earth-300"
-          >
-            View All
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          {recentTransactions.map((transaction) => (
-            <Card key={transaction.id} className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      transaction.type === 'income' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'
-                    }`}>
-                      {transaction.type === 'income' ? (
-                        <ArrowUpRight className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <ArrowDownRight className="w-5 h-5 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-earth-900 dark:text-white">{transaction.description}</h3>
-                      <p className="text-sm text-earth-600 dark:text-earth-400">
-                        {categories.find(c => c.id === transaction.category)?.name} • {formatDate(transaction.date)}
-                      </p>
-                    </div>
+      {/* Main Content */}
+      <main className="px-4 py-6 space-y-6">
+        {activeTab === 'overview' && (
+          <>
+            {/* Financial Summary */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-sm">
+                <CardContent className="p-4 text-center">
+                  <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    KSH {calculateTotalRevenue().toLocaleString()}
                   </div>
-                  <div className="text-right">
-                    <div className={`font-semibold ${
-                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                    </div>
-                    <div className="text-xs text-earth-500 dark:text-earth-400 capitalize">{transaction.status}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-sm">
+                <CardContent className="p-4 text-center">
+                  <TrendingDown className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    KSH {calculateTotalCosts().toLocaleString()}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Costs</div>
+                </CardContent>
+              </Card>
+            </div>
 
-      {/* Category Overview */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-earth-900 dark:text-white mb-4">Category Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {categories.map((category) => {
-            const Icon = category.icon;
-            return (
-              <Card key={category.id} className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full ${category.bgColor} flex items-center justify-center`}>
-                      <Icon className={`w-5 h-5 ${category.color}`} />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-earth-900 dark:text-white">{category.name}</h3>
-                      <p className="text-sm text-earth-600 dark:text-earth-400">
-                        {category.id === 'sales' ? formatCurrency(4500) : 
-                         category.id === 'purchases' ? formatCurrency(2800) :
-                         category.id === 'labor' ? formatCurrency(3200) :
-                         formatCurrency(1800)}
-                      </p>
-                    </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-sm">
+                <CardContent className="p-4 text-center">
+                  <DollarSign className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                  <div className={`text-2xl font-bold ${calculateProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    KSH {calculateProfit().toLocaleString()}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {calculateProfit() >= 0 ? 'Net Profit' : 'Net Loss'}
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-      </div>
+              <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700 shadow-sm">
+                <CardContent className="p-4 text-center">
+                  <CheckCircle className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    KSH {getPendingPayments().toLocaleString()}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Pending Payments</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Checks */}
+            <Card className="bg-white dark:bg-gray-800 border-earth-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileImage className="h-5 w-5 text-earth-600" />
+                  <span>Recent Checks ({checks.length})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {checks.slice(0, 3).map((check, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900 dark:text-white">{check.payee}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {check.date} • {check.bank} • #{check.checkNumber}
+                        </div>
+                      </div>
+                      <div className="text-lg font-bold text-green-600">
+                        KSH {check.amount.toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {activeTab === 'checks' && (
+          <CheckUpload onCheckProcessed={handleCheckProcessed} />
+        )}
+
+        {activeTab === 'timeline' && (
+          <UnifiedTimeline 
+            cropId={1} 
+            events={timelineEvents}
+            onAddEvent={(event) => {
+              const newEvent = { ...event, id: Date.now() };
+              setTimelineEvents([...timelineEvents, newEvent]);
+            }}
+          />
+        )}
+      </main>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-earth-200 dark:border-gray-700 p-4">
-        <div className="flex justify-around max-w-md mx-auto">
-          <Link href="/" className="flex flex-col items-center gap-1 text-earth-600 hover:text-earth-700">
-            <div className="w-6 h-6 rounded-full bg-earth-100 dark:bg-earth-900 flex items-center justify-center">
-              <span className="text-xs">🏠</span>
-            </div>
-            <span className="text-xs">Dashboard</span>
-          </Link>
-          <Link href="/crops" className="flex flex-col items-center gap-1 text-earth-600 hover:text-earth-700">
-            <div className="w-6 h-6 rounded-full bg-earth-100 dark:bg-earth-900 flex items-center justify-center">
-              <span className="text-xs">🌱</span>
-            </div>
-            <span className="text-xs">Crops</span>
-          </Link>
-          <Link href="/inventory" className="flex flex-col items-center gap-1 text-earth-600 hover:text-earth-700">
-            <div className="w-6 h-6 rounded-full bg-earth-100 dark:bg-earth-900 flex items-center justify-center">
-              <span className="text-xs">📦</span>
-            </div>
-            <span className="text-xs">Inventory</span>
-          </Link>
-          <Link href="/financial" className="flex flex-col items-center gap-1 text-earth-700 dark:text-earth-300">
-            <div className="w-6 h-6 rounded-full bg-earth-200 dark:bg-earth-800 flex items-center justify-center">
-              <span className="text-xs">💰</span>
-            </div>
-            <span className="text-xs">Financial</span>
-          </Link>
-        </div>
-      </div>
+      <BottomNavigation />
+
+      {/* Bottom padding to account for fixed navigation */}
+      <div className="h-20"></div>
     </div>
   );
 }

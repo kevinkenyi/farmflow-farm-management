@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import BottomNavigation from "@/components/BottomNavigation";
 import { 
   Search, 
   Plus, 
@@ -220,29 +221,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-earth-200 dark:border-gray-700">
-        <div className="flex justify-around items-center py-2">
-          {[
-            { icon: MapPin, label: 'Fields', href: '/crops' },
-            { icon: Calendar, label: 'Tasks', href: '/tasks' },
-            { icon: Wrench, label: 'Inventory', href: '/inventory', active: true },
-            { icon: CheckCircle2, label: 'Reports', href: '/reports' },
-          ].map((item, index) => (
-            <Link
-              key={index}
-              href={item.href}
-              className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors ${
-                item.active
-                  ? 'text-earth-500 bg-earth-100 dark:bg-earth-900'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
-            >
-              <item.icon className="h-6 w-6 mb-1" />
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <BottomNavigation />
 
       {/* Bottom padding to account for fixed navigation */}
       <div className="h-20"></div>
